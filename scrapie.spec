@@ -40,6 +40,7 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     app_name='Scrapie',
+    icon='scrapie.ico',
     other_options={
         'pyinstaller': {
             'noconsole': True,  # Set to True for --noconsole

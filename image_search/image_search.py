@@ -188,26 +188,29 @@ class ImageSearch:
 
             if next_upload.text == "Upload":
                 next_upload_parent = next_upload.find_element(By.XPATH, "..")
-                next_upload_parent.click()
-
-                upload_from_computer = self.wait_for_element(
-                    By.XPATH, self.SELECTORS["upload_from_computer"]
-                )
-                upload_from_computer_parent = upload_from_computer.find_element(
-                    By.XPATH, ".."
-                )
-                current_url = self.driver.current_url
-                upload_from_computer_parent.click()
-
-                while self.driver.current_url == current_url:
+                if next_upload_parent.is_displayed():
+                    next_upload_parent.click()
                     time.sleep(0.1)
 
-                image_source_button = self.wait_for_element(
-                    By.CSS_SELECTOR, self.SELECTORS["image_source_button"]
-                )
-                image_source_button.click()
+                    upload_from_computer = self.wait_for_element(
+                        By.XPATH, self.SELECTORS["upload_from_computer"]
+                    )
+                    upload_from_computer_parent = upload_from_computer.find_element(
+                        By.XPATH, ".."
+                    )
+                    current_url = self.driver.current_url
+                    if upload_from_computer_parent.is_displayed():
+                        upload_from_computer_parent.click()
 
-                return True
+                        while self.driver.current_url == current_url:
+                            time.sleep(0.1)
+
+                        image_source_button = self.wait_for_element(
+                            By.CSS_SELECTOR, self.SELECTORS["image_source_button"]
+                        )
+                        image_source_button.click()
+
+                        return True
             return False
         except Exception as e:
             return False
