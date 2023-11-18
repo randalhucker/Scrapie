@@ -1,53 +1,75 @@
 import os
+import csv
+import time
 from typing import List, Tuple
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import csv
-import time
+from selenium.webdriver.support.wait import WebDriverWait
 
 
 class ImageSearch:
+    FILENAME = "scrapie_search_results"
+    WAIT_TIMEOUT = 10
+
+    SELECTORS = {
+        "search_by_image_button": '[aria-label="Search by image"]',
+        "upload_file_buttons": "//span[contains(text(), 'upload a file')]",
+        "image_source_button": '[aria-describedby="reverse-image-search-button-tooltip"]',
+        "manage_button": "//div[contains(text(), 'Manage')]",
+        "off_button": "//div[contains(text(), ' Off ')]",
+        "safe_search_title": "//h1[contains(text(), 'SafeSearch')]",
+        "extension_div": "//div[contains(text(), 'More exact matches')]",
+        "results_list": '[aria-label="All results list"]',
+        "next_upload_button": "//span[contains(text(), 'Upload')]",
+        "upload_from_computer": "//span[contains(text(), 'Computer')]",
+    }
+
     def __init__(self, driver: WebDriver):
         self.driver = driver
-        self.filename = ""
+        self.file_counter = 0
+        self.current_filename = f"{self.FILENAME}_{self.file_counter}.csv"
+        self.wait = WebDriverWait(self.driver, self.WAIT_TIMEOUT)
 
-    def get_image_sources(self) -> None:
+    def get_initial_source(self) -> None:
         self.navigate_to_google()
         self.click_search_by_image()
         self.upload_image()
         self.disable_safe_search()
         time.sleep(0.5)
 
-    def wait_for_element(self, by, value, timeout=10) -> WebElement:
+    def wait_for_element(self, by, value, timeout=WAIT_TIMEOUT) -> WebElement:
         return WebDriverWait(self.driver, timeout).until(
             EC.presence_of_element_located((by, value))
         )
 
-    def wait_for_elements(self, by, value, timeout=10) -> List[WebElement]:
+    def wait_for_elements(self, by, value, timeout=WAIT_TIMEOUT) -> List[WebElement]:
         return WebDriverWait(self.driver, timeout).until(
             EC.presence_of_all_elements_located((by, value))
         )
 
     def navigate_to_google(self) -> None:
         self.driver.get("https://www.google.com/")
-        time.sleep(0.5)
+        self.wait.until(
+            lambda d: d.execute_script("return document.readyState") == "complete"
+        )
 
     def click_search_by_image(self) -> None:
-        search_by_image_button = self.driver.find_element(
-            By.CSS_SELECTOR, '[aria-label="Search by image"]'
+        search_by_image_button = self.wait_for_element(
+            By.CSS_SELECTOR, self.SELECTORS["search_by_image_button"]
         )
         search_by_image_button.click()
-        time.sleep(0.5)
+        self.wait.until(
+            lambda d: d.execute_script("return document.readyState") == "complete"
+        )
 
     def upload_image(self) -> None:
-        upload_buttons: List[WebElement] = WebDriverWait(self.driver, 5).until(
-            EC.presence_of_all_elements_located(
-                (By.XPATH, "//span[contains(text(), 'upload a file')]")
-            )
+        upload_buttons: List[WebElement] = self.wait_for_elements(
+            By.XPATH, self.SELECTORS["upload_file_buttons"]
         )
+
+        time.sleep(0.1)
 
         for upload_button in upload_buttons:
             if upload_button.is_displayed():
@@ -55,39 +77,33 @@ class ImageSearch:
                 break
 
         image_source_button = self.wait_for_element(
-            By.CSS_SELECTOR, '[aria-describedby="reverse-image-search-button-tooltip"]'
+            By.CSS_SELECTOR, self.SELECTORS["image_source_button"], 100
         )
 
         image_source_button.click()
-        time.sleep(0.5)
-
-    def disable_safe_search(self) -> None:
-        manage_button = self.wait_for_element(
-            By.XPATH, "//div[contains(text(), 'Manage')]"
+        self.wait.until(
+            lambda d: d.execute_script("return document.readyState") == "complete"
         )
 
+    def disable_safe_search(self) -> None:
+        manage_button = self.wait_for_element(By.XPATH, self.SELECTORS["manage_button"])
         manage_button.click()
 
-        off_button = self.wait_for_element(By.XPATH, "//div[contains(text(), ' Off ')]")
-
+        off_button = self.wait_for_element(By.XPATH, self.SELECTORS["off_button"])
         off_button.click()
 
-        title = self.wait_for_element(By.XPATH, "//h1[contains(text(), 'SafeSearch')]")
+        title = self.wait_for_element(By.XPATH, self.SELECTORS["safe_search_title"])
 
         parent_element = title.find_element(By.XPATH, "..")
 
         first_child_element = parent_element.find_element(By.XPATH, "./*")
-
         first_child_element.click()
 
-    def open_all_extensions(
-        self,
-    ):
-        time.sleep(1)
+    def open_all_extensions(self):
         while True:
             try:
                 extension_div = self.wait_for_element(
-                    By.XPATH, "//div[contains(text(), 'More exact matches')]"
+                    By.XPATH, self.SELECTORS["extension_div"]
                 )
 
                 self.driver.execute_script(
@@ -95,10 +111,9 @@ class ImageSearch:
                 )
 
                 span: WebElement = extension_div.find_element(By.XPATH, "..")
-                extension_button: WebElement = span.find_element(By.XPATH, "..")
 
+                extension_button: WebElement = span.find_element(By.XPATH, "..")
                 extension_button.click()
-                time.sleep(0.5)
             except Exception as e:
                 break
 
@@ -115,19 +130,17 @@ class ImageSearch:
         return first_child, second_child
 
     def get_results(self):
-        time.sleep(1)
-        ul_element = self.driver.find_element(
-            By.CSS_SELECTOR, '[aria-label="All results list"]'
+        ul_element = self.wait_for_element(
+            By.CSS_SELECTOR, self.SELECTORS["results_list"]
         )
 
         li_elements = ul_element.find_elements(By.TAG_NAME, "li")
 
         # Print the text content of each <li> element
         for li_element in li_elements:
-            href = li_element.find_element(By.XPATH, "./a").get_attribute("href")
-            aria_label = li_element.find_element(By.XPATH, "./a").get_attribute(
-                "aria-label"
-            )
+            a_element = li_element.find_element(By.XPATH, "./a")
+            href = a_element.get_attribute("href")
+            aria_label = a_element.get_attribute("aria-label")
 
             if not href or not aria_label:
                 continue
@@ -146,7 +159,10 @@ class ImageSearch:
                 "site_description": desc,
             }
 
-            self.write_to_csv(f"{self.filename}.csv", csv_data)
+            self.write_to_csv(f"{self.current_filename}", csv_data)
+
+        self.file_counter += 1
+        self.current_filename = f"{self.FILENAME}_{self.file_counter}.csv"
 
     def write_to_csv(self, filename, data):
         file_exists = os.path.isfile(filename)
@@ -155,8 +171,43 @@ class ImageSearch:
             fieldnames = ["link", "link_label", "site_title", "site_description"]
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
-            # Write header only if the file is created (doesn't exist)
             if not file_exists:
                 writer.writeheader()
 
             writer.writerow(data)
+
+    def expand_and_save(self):
+        self.open_all_extensions()
+        self.get_results()
+
+    def look_for_next_image(self) -> bool:
+        try:
+            next_upload = self.wait_for_element(
+                By.XPATH, self.SELECTORS["next_upload_button"], 100
+            )
+
+            if next_upload.text == "Upload":
+                next_upload_parent = next_upload.find_element(By.XPATH, "..")
+                next_upload_parent.click()
+
+                upload_from_computer = self.wait_for_element(
+                    By.XPATH, self.SELECTORS["upload_from_computer"]
+                )
+                upload_from_computer_parent = upload_from_computer.find_element(
+                    By.XPATH, ".."
+                )
+                current_url = self.driver.current_url
+                upload_from_computer_parent.click()
+
+                while self.driver.current_url == current_url:
+                    time.sleep(0.1)
+
+                image_source_button = self.wait_for_element(
+                    By.CSS_SELECTOR, self.SELECTORS["image_source_button"]
+                )
+                image_source_button.click()
+
+                return True
+            return False
+        except Exception as e:
+            return False

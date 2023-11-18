@@ -1,5 +1,8 @@
 # -*- mode: python ; coding: utf-8 -*-
-
+# File: scrapie.spec
+# Description: PyInstaller spec file for Scrapie application
+# Author: Randy Hucker
+# Version: 1.0
 
 a = Analysis(
     ['scrapie.py'],

@@ -1,7 +1,7 @@
 from selenium import webdriver
+from selenium.webdriver import DesiredCapabilities
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver import DesiredCapabilities
 from image_search import ImageSearch
 
 # CHROMEDRIVER PAGE
@@ -28,7 +28,3 @@ class Driver:
             service=self.service, options=chromeOptions
         )
         self.ImageSearch = ImageSearch(self.driver)
-        self.ImageSearch.filename = "output"
-        # self.ImageSearch.filename = (
-        #     input("Enter filename: ").strip().lower().replace(" ", "_")
-        # )
