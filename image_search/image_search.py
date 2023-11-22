@@ -11,7 +11,8 @@ from selenium.webdriver.support.wait import WebDriverWait
 
 class ImageSearch:
     FILENAME = "scrapie_search_results"
-    WAIT_TIMEOUT = 10
+    WAIT_TIMEOUT = 10.0
+    CHANGED_PRIVACY = False
 
     SELECTORS = {
         "search_by_image_button": '[aria-label="Search by image"]',
@@ -86,24 +87,31 @@ class ImageSearch:
         )
 
     def disable_safe_search(self) -> None:
-        manage_button = self.wait_for_element(By.XPATH, self.SELECTORS["manage_button"])
-        manage_button.click()
+        try:
+            manage_button = self.wait_for_element(
+                By.XPATH, self.SELECTORS["manage_button"], timeout=1
+            )
+            manage_button.click()
 
-        off_button = self.wait_for_element(By.XPATH, self.SELECTORS["off_button"])
-        off_button.click()
+            off_button = self.wait_for_element(By.XPATH, self.SELECTORS["off_button"])
+            off_button.click()
 
-        title = self.wait_for_element(By.XPATH, self.SELECTORS["safe_search_title"])
+            title = self.wait_for_element(By.XPATH, self.SELECTORS["safe_search_title"])
 
-        parent_element = title.find_element(By.XPATH, "..")
+            parent_element = title.find_element(By.XPATH, "..")
 
-        first_child_element = parent_element.find_element(By.XPATH, "./*")
-        first_child_element.click()
+            first_child_element = parent_element.find_element(By.XPATH, "./*")
+            first_child_element.click()
+
+            self.CHANGED_PRIVACY = True
+        except Exception:
+            pass
 
     def open_all_extensions(self):
         while True:
             try:
                 extension_div = self.wait_for_element(
-                    By.XPATH, self.SELECTORS["extension_div"]
+                    By.XPATH, self.SELECTORS["extension_div"], timeout=1
                 )
 
                 self.driver.execute_script(
@@ -198,6 +206,7 @@ class ImageSearch:
                     upload_from_computer_parent = upload_from_computer.find_element(
                         By.XPATH, ".."
                     )
+                    time.sleep(0.1)
                     current_url = self.driver.current_url
                     if upload_from_computer_parent.is_displayed():
                         upload_from_computer_parent.click()

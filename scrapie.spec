@@ -8,15 +8,13 @@ a = Analysis(
     ['scrapie.py'],
     pathex=[],
     binaries=[],
-    datas=[
-        ('chromedriver.exe', '.'),
-    ],
+    datas=[('chromedriver.exe', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
-    noarchive=False,
+    noarchive=False
 )
 pyz = PYZ(a.pure)
 
@@ -40,11 +38,5 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     app_name='Scrapie',
-    icon='scrapie.ico',
-    other_options={
-        'pyinstaller': {
-            'noconsole': True,  # Set to True for --noconsole
-            'onefile': True,    # Set to True for --onefile
-        }
-    },
+    icon='scrapie.ico'
 )

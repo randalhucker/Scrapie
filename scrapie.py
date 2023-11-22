@@ -26,6 +26,8 @@ def main():
         imager.get_initial_source()
 
         while True:
+            if not imager.CHANGED_PRIVACY:
+                imager.disable_safe_search()
             imager.expand_and_save()
             next_image = imager.look_for_next_image()
             if not next_image:
